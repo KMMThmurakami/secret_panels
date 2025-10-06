@@ -21,6 +21,7 @@ function RoomPage() {
 
   const [room, setRoom] = useState<{
     id: number;
+    name: string;
     password_hash: string | null;
   } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -44,7 +45,7 @@ function RoomPage() {
       // ハッシュIDから部屋の内部IDとパスワードを取得
       const { data: roomData, error: roomError } = await supabase
         .from(roomsTableName)
-        .select("id, password_hash")
+        .select('id, name, password_hash')
         .eq("hashed_id", hashedRoomId)
         .single();
 
@@ -100,7 +101,7 @@ function RoomPage() {
             r ? { ...r, password_hash: payload.new.password_hash } : null
           );
           setIsOpen(false);
-          alert("合言葉が変更されました。");
+          alert("合言葉が設定されました。");
         }
       )
       .subscribe();
@@ -143,7 +144,7 @@ function RoomPage() {
       console.error(error);
     } else {
       setPasswordInput("");
-      alert("合言葉を設定・変更しました。");
+      alert("合言葉を設定しました。");
     }
   };
 
@@ -180,7 +181,7 @@ function RoomPage() {
         この部屋のURL: <code>{window.location.href}</code>
       </p>
       <header>
-        <h2>掲示板</h2>
+        <h2>{room.name}</h2>
         {/* 合言葉設定と表示ボタンのセクション */}
         <section className="controls-section">
           {!room.password_hash && (
@@ -192,7 +193,7 @@ function RoomPage() {
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="合言葉を設定・変更"
+                placeholder="合言葉を設定"
               />
               <button type="submit">設定</button>
             </form>
