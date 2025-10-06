@@ -65,6 +65,8 @@ header {
   word-wrap: break-word;
 	-ms-filter: blur(10px);
 	filter: blur(10px);
+  pointer-events: none;
+  user-select: none;
 }
 
 /* フォーム */
@@ -117,6 +119,19 @@ button:hover {
   margin-top: 0.3rem;
 }
 
+.controls-section {
+  display: flex;
+  align-items: center;
+}
+
 .toggle-button {
-  width: 200px;
+  width: 300px;
+}
+
+.password-form {
+  width: 300px;
+}
+
+.password-form input {
+  margin-bottom: 8px;
 }
