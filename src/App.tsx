@@ -105,7 +105,11 @@ function App() {
     const hash = await digestMessage(passwordInput);
 
     // upsert: id=1の行があればUPDATE、なければINSERTする便利な命令
-    const { error } = await supabase.from(configTableName).upsert({ id: 1, password_hash: hash });
+    const { error } = await supabase.from(configTableName).upsert({
+      id: 1,
+      password_hash: hash,
+      password_updated_at: new Date().toISOString() // 現在時刻をISO形式の文字列で設定
+    });
     
     if (error) {
       alert('エラーが発生しました。');
