@@ -1,72 +1,121 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import './App.css';
+import { supabase } from './supabaseClient';
 
-// 投稿1件ごとのデータ型を定義
+// Postの型定義を変更
 type Post = {
   id: number;
-  name: string;
+  name: string | null; // 名前は空の場合があるのでnull許容
   comment: string;
-  timestamp: string;
+  created_at: string;
 };
 
-// フォームで入力されるデータの型を定義
+// フォームの型定義は同じ
 type FormInputs = {
   name: string;
   comment: string;
 };
 
 function App() {
-  // すべての投稿を配列として管理するState
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
-
-  // react-hook-formの設定
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormInputs>();
 
-  // フォーム送信時に実行される関数
-  const onSubmit: SubmitHandler<FormInputs> = (data) => {
-    // 新しい投稿オブジェクトを作成
-    const newPost: Post = {
-      id: Date.now(), // IDとして現在時刻のタイムスタンプを使い、一意性を担保
-      name: data.name || '名無しさん', // 名前が未入力なら「名無しさん」にする
-      comment: data.comment,
-      timestamp: new Date().toLocaleString('ja-JP'), // 日本のロケールで現在日時を取得
+  useEffect(() => {
+    // 最初に全データを取得
+    const fetchPosts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        setPosts(data || []);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // 既存の投稿リスト（posts）の末尾に新しい投稿（newPost）を追加してStateを更新
-    setPosts([...posts, newPost]);
+    fetchPosts();
 
-    // フォームの入力内容をリセット
-    reset();
+    // postsテーブルのINSERT（追加）を監視する
+    const channel = supabase.channel('posts_channel');
+    channel
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          // 新しい投稿（payload.new）を現在の投稿リストに追加
+          setPosts((currentPosts) => [...currentPosts, payload.new as Post]);
+        }
+      )
+      .subscribe();
+      
+    // クリーンアップ関数（コンポーネントがアンマウントされた時に監視を解除）
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [posts]);
+
+  // フォーム送信時にSupabaseにデータを追加
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
+    setIsSubmitting(true); // 書き込み開始
+    try {
+      const { error } = await supabase.from('posts').insert({
+        name: data.name || null,
+        comment: data.comment,
+      });
+
+      if (error) {
+        throw error;
+      }
+      reset();
+    } catch (error) {
+      console.error('Error adding post:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // ローディング中
+  if (loading) {
+    return (
+      <div className="board-container">
+        <header>
+          <h1>掲示板</h1>
+        </header>
+        <p style={{ textAlign: 'center' }}>読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="board-container">
       <header>
         <h1>掲示板</h1>
       </header>
-
+      
       {/* 投稿リスト表示エリア */}
       <section className="post-list">
-        {posts.length === 0 ? (
-          <p>まだ投稿はありません。最初の投稿をしてみましょう！</p>
-        ) : (
-          posts.map((post, index) => (
-            <div key={post.id} className="post-item">
-              <div className="post-header">
-                <span>{index + 1}: </span>
-                <span className="post-name">{post.name}</span>
-                <span className="post-timestamp"> [{post.timestamp}]</span>
-              </div>
-              <div className="post-comment">
-                {/* 改行を<br />に変換して表示 */}
-                {post.comment.split('\n').map((line, i) => (
-                  <span key={i}>{line}<br /></span>
-                ))}
-              </div>
+        {posts.map((post, index) => (
+          <div key={post.id} className="post-item">
+            <div className="post-header">
+              <span>{index + 1}: </span>
+              <span className="post-name">{post.name || '名無しさん'}</span>
+              {/* created_atを日本の日付文字列に変換して表示 */}
+              <span className="post-timestamp"> [{new Date(post.created_at).toLocaleString('ja-JP')}]</span>
             </div>
-          ))
-        )}
+            <div className="post-comment">
+              {post.comment.split('\n').map((line, i) => (
+                <span key={i}>{line}<br /></span>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
 
       <hr />
@@ -76,12 +125,7 @@ function App() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="form-group">
             <label htmlFor="name">名前:</label>
-            <input
-              id="name"
-              type="text"
-              placeholder="名無しさん"
-              {...register('name')}
-            />
+            <input id="name" type="text" placeholder="名無しさん" {...register('name')} />
           </div>
           <div className="form-group">
             <label htmlFor="comment">コメント:</label>
@@ -91,10 +135,12 @@ function App() {
               rows={4}
               {...register('comment', { required: 'コメントは必須入力です' })}
             />
-            {/* バリデーションエラーメッセージの表示 */}
             {errors.comment && <p className="error-message">{errors.comment.message}</p>}
           </div>
-          <button type="submit">書き込む</button>
+
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? '書き込み中...' : '書き込む'}
+          </button>
         </form>
       </section>
     </div>
