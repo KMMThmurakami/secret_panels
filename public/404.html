@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Single Page Apps for GitHub Pages</title>
+    <script type="text/javascript">
+      // URLのパス部分を取得
+      var path = window.location.pathname;
+      // Viteのbase設定を考慮
+      var basePath = '/bbs_sample/'; // ★ あなたのvite.config.jsのbase設定と合わせる
+
+      // パスからクエリパラメータ部分を分離
+      var segment = path.split('?')[0].replace(basePath, '');
+      var query = path.split('?')[1];
+
+      // sessionStorageにリダイレクト先の情報を保存
+      sessionStorage.redirect = segment;
+      if (query) {
+        sessionStorage.redirect_query = query;
+      }
+
+      // ルートにリダイレクト
+      window.location.replace(basePath);
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
