@@ -34,6 +34,7 @@ jobs:
           npm run build
         env:
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
+          VITE_SUPABASE_TABLE_NAME: ${{ secrets.VITE_SUPABASE_TABLE_NAME }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

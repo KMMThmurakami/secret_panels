@@ -3,6 +3,9 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import './App.css';
 import { supabase } from './supabaseClient';
 
+// テーブルをdevと本番で切り替える
+const tableName = import.meta.env.VITE_SUPABASE_TABLE_NAME as string;
+
 // Postの型定義を変更
 type Post = {
   id: number;
@@ -28,7 +31,7 @@ function App() {
     const fetchPosts = async () => {
       try {
         const { data, error } = await supabase
-          .from('posts')
+          .from(tableName)
           .select('*')
           .order('created_at', { ascending: true });
         if (error) throw error;
@@ -47,7 +50,7 @@ function App() {
     channel
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'posts' },
+        { event: 'INSERT', schema: 'public', table: tableName },
         (payload) => {
           // 新しい投稿（payload.new）を現在の投稿リストに追加
           setPosts((currentPosts) => [...currentPosts, payload.new as Post]);
@@ -65,7 +68,7 @@ function App() {
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setIsSubmitting(true); // 書き込み開始
     try {
-      const { error } = await supabase.from('posts').insert({
+      const { error } = await supabase.from(tableName).insert({
         name: data.name || null,
         comment: data.comment,
       });
