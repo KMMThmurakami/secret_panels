@@ -22,16 +22,16 @@ type PasswordFormInputs = { password: string };
 // ランダムに色を設定
 const createShuffleGenerator = () => {
   const masterColors = [
-    'hsl(0, 70%, 85%)',   // 赤系
-    'hsl(45, 70%, 85%)',  // オレンジ系
-    'hsl(90, 70%, 85%)',  // 黄色系
-    'hsl(135, 70%, 85%)', // 黄緑系
-    'hsl(180, 70%, 85%)', // シアン系
-    'hsl(225, 70%, 85%)', // 青系
-    'hsl(270, 70%, 85%)', // 紫系
-    'hsl(315, 70%, 85%)'  // マゼンタ系
+    "hsl(0, 70%, 85%)", // 赤系
+    "hsl(45, 70%, 85%)", // オレンジ系
+    "hsl(90, 70%, 85%)", // 黄色系
+    "hsl(135, 70%, 85%)", // 黄緑系
+    "hsl(180, 70%, 85%)", // シアン系
+    "hsl(225, 70%, 85%)", // 青系
+    "hsl(270, 70%, 85%)", // 紫系
+    "hsl(315, 70%, 85%)", // マゼンタ系
   ];
-  
+
   // 「まだ使える色」のリスト。最初はマスターリストのコピー
   let remainingColors: string[] = [];
 
@@ -40,14 +40,14 @@ const createShuffleGenerator = () => {
     if (remainingColors.length === 0) {
       remainingColors = [...masterColors];
     }
-    
+
     // 「まだ使える色」のリストの中からランダムなインデックスを決定
     const randomIndex = Math.floor(Math.random() * remainingColors.length);
-    
+
     // spliceを使って、ランダムな位置から色を1つ「取り出す」
     // これにより、リストから色が削除され、戻り値としてその色が返る
     const chosenColor = remainingColors.splice(randomIndex, 1)[0];
-    
+
     return chosenColor;
   };
 };
@@ -269,7 +269,13 @@ function RoomPage() {
   };
 
   if (loading) return <div>読み込み中...</div>;
-  if (!room) return <div>部屋が見つかりません。</div>;
+  if (!room)
+    return (
+      <>
+        <div>部屋が見つかりません。</div>
+        <Link to="/">HOMEへ戻る</Link>
+      </>
+    );
 
   return (
     <div className="board-container">
@@ -341,7 +347,11 @@ function RoomPage() {
 
       <section className="post-list">
         {posts.map((post, index) => (
-          <div key={post.id} className="post-item" style={{ backgroundColor: post.color }}>
+          <div
+            key={post.id}
+            className="post-item"
+            style={{ backgroundColor: post.color }}
+          >
             <div className="post-header">
               <span>{index + 1}: </span>
               <span className="post-name">{post.name || "名無しさん"}</span>
@@ -350,7 +360,11 @@ function RoomPage() {
                 [{new Date(post.created_at).toLocaleString("ja-JP")}]
               </span>
             </div>
-            <div className={isOpen ? "post-comment" : "post-comment post-comment-hidden"}>
+            <div
+              className={
+                isOpen ? "post-comment" : "post-comment post-comment-hidden"
+              }
+            >
               {post.comment.split("\n").map((line, i) => (
                 <span key={i}>
                   {isOpen ? line : "？？？？"}
