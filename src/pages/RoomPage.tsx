@@ -177,6 +177,43 @@ function RoomPage() {
     }
   };
 
+  const handleResetPost = async () => {
+    if (!room) return;
+    const input = window.prompt(
+      "コメントをリセットするには、合言葉を入力してください:"
+    );
+
+    if (input === null || input === "") return;
+
+    const inputHash = await digestMessage(input);
+
+    if (inputHash !== room.password_hash) {
+      alert("合言葉が違います。");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "この部屋のすべてのコメントをリセットします。本当によろしいですか？"
+      )
+    ) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from(postsTableName)
+      .delete()
+      .eq("room_id", room.id);
+
+    if (error) {
+      alert("エラーが発生しました。");
+      console.error(error);
+    } else {
+      setPosts([]); // 画面上の投稿リストも空にする
+      alert("コメントをリセットしました。");
+    }
+  };
+
   const handleCopyUrl = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -199,7 +236,7 @@ function RoomPage() {
     <div className="board-container">
       <header>
         <nav>
-          <Link to="/" className="back-link">
+          <Link to="/" className="back-link secondary-button">
             HOMEへ戻る
           </Link>
         </nav>
@@ -235,16 +272,30 @@ function RoomPage() {
                   },
                 })}
               />
-              <button type="submit">設定</button>
+              <button type="submit" className="primary-button">
+                設定
+              </button>
               {passwordErrors.password && (
-                <p className="error-message">{passwordErrors.password.message}</p>
+                <p className="error-message">
+                  {passwordErrors.password.message}
+                </p>
               )}
             </form>
           )}
           {room.password_hash && (
-            <button onClick={handleToggleOpen} className="toggle-button">
-              {isOpen ? "コメントを隠す" : "コメントを表示する"}
-            </button>
+            <>
+              <button
+                onClick={handleToggleOpen}
+                className={`toggle-button ${
+                  isOpen ? "secondary-button" : "primary-button"
+                }`}
+              >
+                {isOpen ? "コメントを隠す" : "コメントを表示する"}
+              </button>
+              <button onClick={handleResetPost} className="danger-button">
+                コメントをリセット
+              </button>
+            </>
           )}
         </section>
       </div>
@@ -285,8 +336,8 @@ function RoomPage() {
               placeholder="名無しさん"
               {...register("name", {
                 maxLength: {
-                  value: 255,
-                  message: "名前は255文字以内で入力してください",
+                  value: 32,
+                  message: "名前は32文字以内で入力してください",
                 },
               })}
             />
@@ -313,7 +364,11 @@ function RoomPage() {
             )}
           </div>
 
-          <button type="submit" disabled={isSubmitting}>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="primary-button"
+          >
             {isSubmitting ? "書き込み中..." : "書き込む"}
           </button>
         </form>
