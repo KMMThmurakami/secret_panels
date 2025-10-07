@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from 'react-router-dom';
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { LuCopy, LuCheck } from "react-icons/lu";
 import { supabase } from "../supabaseClient";
 import { digestMessage } from "../utils/crypto";
 import "../App.css";
@@ -29,6 +30,7 @@ function RoomPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
 
   const {
     register,
@@ -172,15 +174,43 @@ function RoomPage() {
     }
   };
 
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      
+      // 2秒後にアイコンを元に戻す
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    } catch (err) {
+      console.error('URLのコピーに失敗しました。', err);
+      alert('URLのコピーに失敗しました。');
+    }
+  };
+
   if (loading) return <div>読み込み中...</div>;
   if (!room) return <div>部屋が見つかりません。</div>;
 
   return (
     <div className="board-container">
-      <p>
-        この部屋のURL: <code>{window.location.href}</code>
-      </p>
       <header>
+        <nav>
+          <Link to="/" className="back-link">HOMEへ戻る</Link>
+        </nav>
+        <button onClick={handleCopyUrl} className="copy-link-button">
+          {isCopied ? (
+            <>
+              <LuCheck color="green" /> コピーしました！
+            </>
+          ) : (
+            <>
+              <LuCopy /> 部屋のURLをコピー
+            </>
+          )}
+        </button>
+      </header>
+      <div className="board-head">
         <h2>{room.name}</h2>
         {/* 合言葉設定と表示ボタンのセクション */}
         <section className="controls-section">
@@ -204,7 +234,7 @@ function RoomPage() {
             </button>
           )}
         </section>
-      </header>
+      </div>
 
       <section className="post-list">
         {posts.map((post, index) => (

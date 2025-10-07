@@ -12,10 +12,7 @@ function HomePage() {
   const navigate = useNavigate();
 
   const handleCreateRoom = async () => {
-    if (!roomName.trim()) {
-      alert("部屋の名前を入力してください。");
-      return;
-    }
+    const roomNameToSend = roomName.trim() || "無題の部屋";
 
     setIsCreating(true);
     try {
@@ -26,7 +23,7 @@ function HomePage() {
       // 新しい部屋をDBに作成
       const { data, error } = await supabase
         .from(roomsTableName)
-        .insert({ hashed_id: hashedId, name: roomName })
+        .insert({ hashed_id: hashedId, name: roomNameToSend })
         .select()
         .single();
 
@@ -45,7 +42,7 @@ function HomePage() {
     <div className="home-container">
       <h1>ようこそ！</h1>
       <p>新しい掲示板の部屋を作成して、URLを友達と共有しよう。</p>
-      <div className="create-room-form">
+      <div className="create-room-form form-group">
         <input
           type="text"
           value={roomName}
