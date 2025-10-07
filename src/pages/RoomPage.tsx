@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { LuCopy, LuCheck } from "react-icons/lu";
 import { supabase } from "../supabaseClient";
 import { digestMessage } from "../utils/crypto";
 import "../App.css";
 
-const tableName = import.meta.env.VITE_SUPABASE_TABLE_NAME as string;
+const postsTableName = import.meta.env.VITE_SUPABASE_TABLE_NAME as string;
 const roomsTableName = import.meta.env.VITE_SUPABASE_CONFIG_NAME as string;
 
 type Post = {
@@ -16,6 +16,7 @@ type Post = {
   created_at: string;
 };
 type FormInputs = { name: string; comment: string };
+type PasswordFormInputs = { password: string };
 
 function RoomPage() {
   const { hashedRoomId } = useParams<{ hashedRoomId: string }>();
@@ -29,7 +30,6 @@ function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
   const [isCopied, setIsCopied] = useState(false);
 
   const {
@@ -39,6 +39,13 @@ function RoomPage() {
     formState: { errors },
   } = useForm<FormInputs>();
 
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    reset: resetPassword,
+    formState: { errors: passwordErrors },
+  } = useForm<PasswordFormInputs>();
+
   useEffect(() => {
     if (!hashedRoomId) return;
 
@@ -47,7 +54,7 @@ function RoomPage() {
       // ハッシュIDから部屋の内部IDとパスワードを取得
       const { data: roomData, error: roomError } = await supabase
         .from(roomsTableName)
-        .select('id, name, password_hash')
+        .select("id, name, password_hash")
         .eq("hashed_id", hashedRoomId)
         .single();
 
@@ -60,7 +67,7 @@ function RoomPage() {
 
       // 部屋に紐づく投稿を取得
       const { data: postsData, error: postsError } = await supabase
-        .from(tableName)
+        .from(postsTableName)
         .select("*")
         .eq("room_id", roomData.id)
         .order("created_at", { ascending: true });
@@ -81,7 +88,7 @@ function RoomPage() {
         {
           event: "INSERT",
           schema: "public",
-          table: tableName,
+          table: postsTableName,
           filter: `room_id=eq.${room?.id}`,
         },
         (payload) => setPosts((p) => [...p, payload.new as Post])
@@ -117,7 +124,7 @@ function RoomPage() {
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     if (!room) return;
     setIsSubmitting(true);
-    await supabase.from(tableName).insert({
+    await supabase.from(postsTableName).insert({
       room_id: room.id,
       name: data.name || null,
       comment: data.comment,
@@ -126,26 +133,22 @@ function RoomPage() {
     setIsSubmitting(false);
   };
 
-  const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onPasswordSubmit: SubmitHandler<PasswordFormInputs> = async (data) => {
     if (!room) return;
-    if (!passwordInput) return alert("合言葉を入力してください。");
-
-    const hash = await digestMessage(passwordInput);
-
+    const hash = await digestMessage(data.password);
     const { error } = await supabase
       .from(roomsTableName)
       .update({
         password_hash: hash,
         password_updated_at: new Date().toISOString(),
       })
-      .eq("id", room.id); // 現在の部屋のIDを指定
+      .eq("id", room.id);
 
     if (error) {
       alert("エラーが発生しました。");
       console.error(error);
     } else {
-      setPasswordInput("");
+      resetPassword();
       alert("合言葉を設定しました。");
     }
   };
@@ -178,14 +181,14 @@ function RoomPage() {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setIsCopied(true);
-      
+
       // 2秒後にアイコンを元に戻す
       setTimeout(() => {
         setIsCopied(false);
       }, 2000);
     } catch (err) {
-      console.error('URLのコピーに失敗しました。', err);
-      alert('URLのコピーに失敗しました。');
+      console.error("URLのコピーに失敗しました。", err);
+      alert("URLのコピーに失敗しました。");
     }
   };
 
@@ -196,7 +199,9 @@ function RoomPage() {
     <div className="board-container">
       <header>
         <nav>
-          <Link to="/" className="back-link">HOMEへ戻る</Link>
+          <Link to="/" className="back-link">
+            HOMEへ戻る
+          </Link>
         </nav>
         <button onClick={handleCopyUrl} className="copy-link-button">
           {isCopied ? (
@@ -211,21 +216,29 @@ function RoomPage() {
         </button>
       </header>
       <div className="board-head">
-        <h2>{room.name}</h2>
+        <h2 className="room-name">{room.name}</h2>
         {/* 合言葉設定と表示ボタンのセクション */}
         <section className="controls-section">
           {!room.password_hash && (
             <form
-              onSubmit={handleSetPassword}
+              onSubmit={handleSubmitPassword(onPasswordSubmit)}
               className="form-group password-form"
             >
               <input
                 type="password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="合言葉を設定"
+                {...registerPassword("password", {
+                  required: "合言葉は必須です",
+                  maxLength: {
+                    value: 255,
+                    message: "パスワードは255文字以内で入力してください",
+                  },
+                })}
               />
               <button type="submit">設定</button>
+              {passwordErrors.password && (
+                <p className="error-message">{passwordErrors.password.message}</p>
+              )}
             </form>
           )}
           {room.password_hash && (
@@ -270,7 +283,12 @@ function RoomPage() {
               id="name"
               type="text"
               placeholder="名無しさん"
-              {...register("name")}
+              {...register("name", {
+                maxLength: {
+                  value: 255,
+                  message: "名前は255文字以内で入力してください",
+                },
+              })}
             />
           </div>
           <div className="form-group">
@@ -279,8 +297,17 @@ function RoomPage() {
               id="comment"
               placeholder="コメントを入力"
               rows={4}
-              {...register("comment", { required: "コメントは必須入力です" })}
+              {...register("comment", {
+                required: "コメントは必須入力です",
+                maxLength: {
+                  value: 255,
+                  message: "コメントは255文字以内で入力してください",
+                },
+              })}
             />
+            {errors.name && (
+              <p className="error-message">{errors.name.message}</p>
+            )}
             {errors.comment && (
               <p className="error-message">{errors.comment.message}</p>
             )}

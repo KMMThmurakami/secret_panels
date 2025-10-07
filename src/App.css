@@ -38,6 +38,10 @@ header {
   margin: 8px 0;
 }
 
+.room-name {
+  word-break: break-all;
+}
+
 /* 投稿リスト */
 .post-list {
   margin-bottom: 2rem;

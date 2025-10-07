@@ -1,36 +1,47 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { supabase } from "../supabaseClient";
 import { digestMessage } from "../utils/crypto";
 import "../App.css";
 
 const roomsTableName = import.meta.env.VITE_SUPABASE_CONFIG_NAME as string;
 
+type FormInputs = {
+  roomName: string;
+};
+
 function HomePage() {
   const [isCreating, setIsCreating] = useState(false);
-  const [roomName, setRoomName] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormInputs>();
   const navigate = useNavigate();
 
-  const handleCreateRoom = async () => {
-    const roomNameToSend = roomName.trim() || "無題の部屋";
-
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setIsCreating(true);
+
+    // 空文字の場合は「無題の部屋」を設定
+    const roomNameToSend = data.roomName.trim() || "無題の部屋";
+
     try {
-      // 部屋の一意なIDとして、現在時刻と乱数を組み合わせた文字列を生成
       const uniqueString = `${Date.now()}${Math.random()}`;
       const hashedId = await digestMessage(uniqueString);
 
-      // 新しい部屋をDBに作成
-      const { data, error } = await supabase
+      const { data: roomData, error } = await supabase
         .from(roomsTableName)
-        .insert({ hashed_id: hashedId, name: roomNameToSend })
+        .insert({
+          hashed_id: hashedId,
+          name: roomNameToSend,
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      // 作成した部屋のURLに移動
-      navigate(`/room/${data.hashed_id}`);
+      navigate(`/room/${roomData.hashed_id}`);
     } catch (error) {
       console.error("Error creating room:", error);
       alert("部屋の作成に失敗しました。");
@@ -42,17 +53,27 @@ function HomePage() {
     <div className="home-container">
       <h1>ようこそ！</h1>
       <p>新しい掲示板の部屋を作成して、URLを友達と共有しよう。</p>
-      <div className="create-room-form form-group">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="create-room-form form-group"
+      >
         <input
           type="text"
-          value={roomName}
-          onChange={(e) => setRoomName(e.target.value)}
           placeholder="部屋の名前"
+          {...register("roomName", {
+            maxLength: {
+              value: 255,
+              message: "部屋名は255文字以内で入力してください",
+            },
+          })}
         />
-        <button onClick={handleCreateRoom} disabled={isCreating}>
-          {isCreating ? '作成中...' : '新しい部屋を作成する'}
+        {errors.roomName && (
+          <p className="error-message">{errors.roomName.message}</p>
+        )}
+        <button type="submit" disabled={isCreating}>
+          {isCreating ? "作成中..." : "新しい部屋を作成する"}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
