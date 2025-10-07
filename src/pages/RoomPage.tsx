@@ -311,10 +311,10 @@ function RoomPage() {
                 [{new Date(post.created_at).toLocaleString("ja-JP")}]
               </span>
             </div>
-            <div className={isOpen ? "post-comment" : "post-comment-hidden"}>
+            <div className={isOpen ? "post-comment" : "post-comment post-comment-hidden"}>
               {post.comment.split("\n").map((line, i) => (
                 <span key={i}>
-                  {isOpen ? line : "モザイクを破るの禁止！"}
+                  {isOpen ? line : "？？？？"}
                   <br />
                 </span>
               ))}
