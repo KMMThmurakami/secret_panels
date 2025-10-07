@@ -61,6 +61,7 @@ header {
 .post-header {
   font-size: 0.9rem;
   color: #888;
+  overflow-wrap: break-word;
 }
 
 .post-name {
@@ -72,13 +73,13 @@ header {
 .post-comment {
   margin-top: 0.5rem;
   font-size: 1.1rem;
-  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .post-comment-hidden {
   margin-top: 0.5rem;
   font-size: 1.1rem;
-  word-wrap: break-word;
+  overflow-wrap: break-word;
   -ms-filter: blur(10px);
   filter: blur(10px);
   pointer-events: none;
