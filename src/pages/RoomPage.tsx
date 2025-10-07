@@ -14,9 +14,44 @@ type Post = {
   name: string | null;
   comment: string;
   created_at: string;
+  color: string;
 };
 type FormInputs = { name: string; comment: string };
 type PasswordFormInputs = { password: string };
+
+// ランダムに色を設定
+const createShuffleGenerator = () => {
+  const masterColors = [
+    'hsl(0, 70%, 85%)',   // 赤系
+    'hsl(45, 70%, 85%)',  // オレンジ系
+    'hsl(90, 70%, 85%)',  // 黄色系
+    'hsl(135, 70%, 85%)', // 黄緑系
+    'hsl(180, 70%, 85%)', // シアン系
+    'hsl(225, 70%, 85%)', // 青系
+    'hsl(270, 70%, 85%)', // 紫系
+    'hsl(315, 70%, 85%)'  // マゼンタ系
+  ];
+  
+  // 「まだ使える色」のリスト。最初はマスターリストのコピー
+  let remainingColors: string[] = [];
+
+  return () => {
+    // もし「まだ使える色」が1つもなければ、マスターリストからコピーしてリセットする
+    if (remainingColors.length === 0) {
+      remainingColors = [...masterColors];
+    }
+    
+    // 「まだ使える色」のリストの中からランダムなインデックスを決定
+    const randomIndex = Math.floor(Math.random() * remainingColors.length);
+    
+    // spliceを使って、ランダムな位置から色を1つ「取り出す」
+    // これにより、リストから色が削除され、戻り値としてその色が返る
+    const chosenColor = remainingColors.splice(randomIndex, 1)[0];
+    
+    return chosenColor;
+  };
+};
+const getUniqueRandomColor = createShuffleGenerator();
 
 function RoomPage() {
   const { hashedRoomId } = useParams<{ hashedRoomId: string }>();
@@ -121,13 +156,18 @@ function RoomPage() {
     };
   }, [hashedRoomId, room?.id, posts]);
 
-  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
+  const onPostSubmit: SubmitHandler<FormInputs> = async (data) => {
     if (!room) return;
     setIsSubmitting(true);
+
+    // ランダムな色を生成
+    const randomColor = getUniqueRandomColor();
+
     await supabase.from(postsTableName).insert({
       room_id: room.id,
       name: data.name || null,
       comment: data.comment,
+      color: randomColor,
     });
     reset();
     setIsSubmitting(false);
@@ -210,7 +250,6 @@ function RoomPage() {
       console.error(error);
     } else {
       setPosts([]); // 画面上の投稿リストも空にする
-      alert("コメントをリセットしました。");
     }
   };
 
@@ -302,7 +341,7 @@ function RoomPage() {
 
       <section className="post-list">
         {posts.map((post, index) => (
-          <div key={post.id} className="post-item">
+          <div key={post.id} className="post-item" style={{ backgroundColor: post.color }}>
             <div className="post-header">
               <span>{index + 1}: </span>
               <span className="post-name">{post.name || "名無しさん"}</span>
@@ -327,7 +366,7 @@ function RoomPage() {
 
       {/* 投稿フォームエリア */}
       <section className="form-section">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onPostSubmit)}>
           <div className="form-group">
             <label htmlFor="name">名前:</label>
             <input
