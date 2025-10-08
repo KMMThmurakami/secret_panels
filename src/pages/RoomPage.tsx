@@ -114,24 +114,33 @@ function RoomPage() {
     };
 
     fetchRoomData();
+  }, [hashedRoomId]);
 
-    // リアルタイムリスナーを設定
+  useEffect(() => {
+    if (!room?.id || !hashedRoomId) return;
+
+    // 投稿のリアルタイムリスナー
     const postsChannel = supabase
-      .channel(`posts_${hashedRoomId}`)
+      .channel(`posts_realtime_${hashedRoomId}`) // チャンネル名は他と重複しなければ何でもOK
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: postsTableName,
-          filter: `room_id=eq.${room?.id}`,
+          filter: `room_id=eq.${room.id}`,
         },
-        (payload) => setPosts((p) => [...p, payload.new as Post])
+        (payload) => {
+          // 既存の投稿リストに新しい投稿を追加する
+          setPosts((currentPosts) => [...currentPosts, payload.new as Post]);
+          console.log("新しいpostを検知");
+        }
       )
       .subscribe();
 
+    // 合言葉変更のリアルタイムリスナー
     const roomChannel = supabase
-      .channel(`room_${hashedRoomId}`)
+      .channel(`room_realtime_${hashedRoomId}`)
       .on(
         "postgres_changes",
         {
@@ -142,19 +151,23 @@ function RoomPage() {
         },
         (payload) => {
           setRoom((r) =>
-            r ? { ...r, password_hash: payload.new.password_hash } : null
+            r
+              ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                { ...r, password_hash: (payload.new as any).password_hash }
+              : null
           );
           setIsOpen(false);
-          alert("合言葉が設定されました。");
+          alert("合言葉が変更されました。");
         }
       )
       .subscribe();
 
+    // このコンポーネントが画面から消える時に、監視を終了する
     return () => {
       supabase.removeChannel(postsChannel);
       supabase.removeChannel(roomChannel);
     };
-  }, [hashedRoomId, room?.id, posts]);
+  }, [room?.id, hashedRoomId]);
 
   const onPostSubmit: SubmitHandler<FormInputs> = async (data) => {
     if (!room) return;
