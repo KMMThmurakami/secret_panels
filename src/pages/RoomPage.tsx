@@ -138,6 +138,14 @@ function RoomPage() {
           console.log("新しいpostを検知");
         }
       )
+      .on(
+        "broadcast",
+        { event: "reset" }, // 'reset' という名前のイベントを待つ
+        () => {
+          // 'reset' イベントを受け取ったら、投稿リストを空にする
+          setPosts([]);
+        }
+      )
       .subscribe();
 
     // 合言葉変更のリアルタイムリスナー
@@ -264,13 +272,18 @@ function RoomPage() {
 
     const { error } = await supabase
       .from(postsTableName)
-      .delete()
+      .update({ room_id: null })
       .eq("room_id", room.id);
 
     if (error) {
       alert("エラーが発生しました。");
       console.error(error);
     } else {
+      const channel = supabase.channel(`posts_realtime_${hashedRoomId}`);
+      channel.send({
+        type: "broadcast",
+        event: "reset",
+      });
       setPosts([]); // 画面上の投稿リストも空にする
     }
   };
