@@ -16,6 +16,12 @@ type Post = {
   created_at: string;
   color: string;
 };
+type Room = {
+  id: number;
+  name: string;
+  password_hash: string | null;
+  is_open: boolean;
+};
 type FormInputs = { name: string; comment: string };
 type PasswordFormInputs = { password: string };
 
@@ -56,17 +62,13 @@ const getUniqueRandomColor = createShuffleGenerator();
 function RoomPage() {
   const { hashedRoomId } = useParams<{ hashedRoomId: string }>();
 
-  const [room, setRoom] = useState<{
-    id: number;
-    name: string;
-    password_hash: string | null;
-  } | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-
+  
+  const isOpen = room?.is_open || false; 
   const {
     register,
     handleSubmit,
@@ -89,7 +91,7 @@ function RoomPage() {
       // ハッシュIDから部屋の内部IDとパスワードを取得
       const { data: roomData, error: roomError } = await supabase
         .from(roomsTableName)
-        .select("id, name, password_hash")
+        .select("id, name, password_hash, is_open")
         .eq("hashed_id", hashedRoomId)
         .single();
 
@@ -156,8 +158,8 @@ function RoomPage() {
                 { ...r, password_hash: (payload.new as any).password_hash }
               : null
           );
-          setIsOpen(false);
-          alert("合言葉が変更されました。");
+          const newRoomData = payload.new as Room;
+          setRoom(newRoomData);
         }
       )
       .subscribe();
@@ -207,26 +209,33 @@ function RoomPage() {
   };
 
   const handleToggleOpen = async () => {
-    if (isOpen) {
-      setIsOpen(false);
-      return;
+    if (!room) return;
+
+    // 現在の状態を反転させた新しい状態
+    const newIsOpenState = !isOpen;
+
+    // もしコメントを「表示する」操作で、かつパスワードが設定されている場合
+    if (newIsOpenState === true && room.password_hash) {
+      const input = window.prompt("合言葉を入力してください:");
+      if (input === null || input === "") return;
+
+      const inputHash = await digestMessage(input);
+
+      if (inputHash !== room.password_hash) {
+        alert("合言葉が違います。");
+        return;
+      }
     }
+    
+    // 合言葉のチェックを通過した、または不要な場合、DBを更新
+    const { error } = await supabase
+      .from(roomsTableName)
+      .update({ is_open: newIsOpenState }) // DBのis_openを更新
+      .eq("id", room.id);
 
-    if (!room?.password_hash) {
-      // パスワードが設定されていない場合は、そのまま表示
-      setIsOpen(true);
-      return;
-    }
-
-    const input = window.prompt("合言葉を入力してください:");
-    if (input === null || input === "") return;
-
-    const inputHash = await digestMessage(input);
-
-    if (inputHash === room.password_hash) {
-      setIsOpen(true);
-    } else {
-      alert("合言葉が違います。");
+    if (error) {
+      alert("エラーが発生しました。");
+      console.error(error);
     }
   };
 
