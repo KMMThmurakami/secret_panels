@@ -51,8 +51,9 @@ function HomePage() {
 
   return (
     <div className="home-container">
-      <h1>ようこそ！</h1>
-      <p>新しい掲示板の部屋を作成して、URLを友達と共有しよう。</p>
+      <h1>Secret Panels</h1>
+      <p>新しい部屋を作成して、URLを共有しよう。</p>
+      <p>部屋は深夜にリセットされます。</p>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="create-room-form form-group"
