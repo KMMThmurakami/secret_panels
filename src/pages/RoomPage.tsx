@@ -376,7 +376,10 @@ function RoomPage() {
                   type="text"
                   {...registerRoomName("roomName", {
                     required: "部屋の名前は必須です",
-                    maxLength: 255,
+                  maxLength: {
+                    value: 255,
+                    message: "部屋名は255文字以内で入力してください",
+                  },
                   })}
                   autoFocus
                 />
