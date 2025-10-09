@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { LuCopy, LuCheck } from "react-icons/lu";
+import { LuCopy, LuCheck, LuPencil } from "react-icons/lu";
 import { supabase } from "../supabaseClient";
 import { digestMessage } from "../utils/crypto";
 import "../App.css";
@@ -24,6 +24,7 @@ type Room = {
 };
 type FormInputs = { name: string; comment: string };
 type PasswordFormInputs = { password: string };
+type RoomNameFormInputs = { roomName: string };
 
 // ランダムに色を設定
 const createShuffleGenerator = () => {
@@ -67,8 +68,9 @@ function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  
-  const isOpen = room?.is_open || false; 
+  const [isEditingName, setIsEditingName] = useState(false);
+
+  const isOpen = room?.is_open || false;
   const {
     register,
     handleSubmit,
@@ -82,6 +84,13 @@ function RoomPage() {
     reset: resetPassword,
     formState: { errors: passwordErrors },
   } = useForm<PasswordFormInputs>();
+
+  const {
+    register: registerRoomName,
+    handleSubmit: handleSubmitRoomName,
+    reset: resetRoomName,
+    formState: { errors: roomNameErrors },
+  } = useForm<RoomNameFormInputs>();
 
   useEffect(() => {
     if (!hashedRoomId) return;
@@ -234,7 +243,7 @@ function RoomPage() {
         return;
       }
     }
-    
+
     // 合言葉のチェックを通過した、または不要な場合、DBを更新
     const { error } = await supabase
       .from(roomsTableName)
@@ -303,6 +312,29 @@ function RoomPage() {
     }
   };
 
+  const onUpdateRoomName: SubmitHandler<RoomNameFormInputs> = async (data) => {
+    if (!room) return;
+
+    const newName = data.roomName.trim();
+    if (!newName) {
+      return;
+    }
+
+    const { data: updatedRoom, error } = await supabase
+      .from(roomsTableName)
+      .update({ name: newName })
+      .eq("id", room.id)
+      .select()
+      .single();
+
+    if (error) {
+      alert("名前の更新に失敗しました。");
+    } else {
+      setRoom(updatedRoom as Room);
+      setIsEditingName(false);
+    }
+  };
+
   if (loading) return <div>読み込み中...</div>;
   if (!room)
     return (
@@ -333,7 +365,56 @@ function RoomPage() {
         </button>
       </header>
       <div className="board-head">
-        <h2 className="room-name">{room.name}</h2>
+        <div className="room-name-container">
+          {isEditingName ? (
+            <form
+              onSubmit={handleSubmitRoomName(onUpdateRoomName)}
+              className="room-name-editWrap"
+            >
+              <div className="room-name-edit">
+                <input
+                  type="text"
+                  {...registerRoomName("roomName", {
+                    required: "部屋の名前は必須です",
+                    maxLength: 255,
+                  })}
+                  autoFocus
+                />
+                <div className="room-name-edit-buttonWrap">
+                  <button type="submit" className="primary-button">
+                    保存
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(false)}
+                    className="secondary-button"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+              {roomNameErrors.roomName && (
+                <p className="error-message">
+                  {roomNameErrors.roomName.message}
+                </p>
+              )}
+            </form>
+          ) : (
+            <>
+              <h2 className="room-name">{room.name}</h2>
+              <button
+                onClick={() => {
+                  setIsEditingName(true);
+                  resetRoomName({ roomName: room.name });
+                }}
+                className="edit-name-button"
+                title="部屋名を編集"
+              >
+                <LuPencil />
+              </button>
+            </>
+          )}
+        </div>
         {/* 合言葉設定と表示ボタンのセクション */}
         <section className="controls-section">
           {!room.password_hash && (

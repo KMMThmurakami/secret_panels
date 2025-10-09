@@ -267,3 +267,60 @@ button:hover {
   cursor: not-allowed;
   color: #666;
 }
+
+/* 部屋名編集 */
+.room-name-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  width: 100%;
+}
+
+.room-name-editWrap {
+  display: flex;
+  gap: 0.5rem;
+  width: 98%;
+  flex-direction: column;
+}
+
+.room-name-edit {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.room-name-edit input {
+  flex-grow: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.edit-name-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+}
+
+.edit-name-button:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.edit-name-button svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.room-name-edit-buttonWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
