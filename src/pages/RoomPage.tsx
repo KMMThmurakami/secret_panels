@@ -276,6 +276,10 @@ function RoomPage() {
     });
     reset();
     setIsSubmitting(false);
+    if (channelRef.current) {
+      channelRef.current.track({ is_typing: false });
+    }
+    setIsCurrentlyTyping(false);
   };
 
   const onPasswordSubmit: SubmitHandler<PasswordFormInputs> = async (data) => {
@@ -566,6 +570,19 @@ function RoomPage() {
             </div>
           </div>
         ))}
+        {Array(typingUsersCount)
+          .fill(0)
+          .map((_, index) => (
+            <div
+              key={index}
+              className="post-item"
+              style={{ backgroundColor: "#ccc", opacity: 0.5 }}
+            >
+              <div className="post-comment">
+                <span>書き込み中...</span>
+              </div>
+            </div>
+          ))}
       </section>
 
       <hr />
@@ -618,16 +635,6 @@ function RoomPage() {
             {isSubmitting ? "書き込み中..." : "書き込む"}
           </button>
         </form>
-
-        <p
-          className={
-            typingUsersCount > 0
-              ? "typing-indicator"
-              : "typing-indicator typing-indicator-hidden"
-          }
-        >
-          {typingUsersCount}人が書き込み中...
-        </p>
       </section>
     </div>
   );
