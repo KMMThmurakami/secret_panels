@@ -42,6 +42,14 @@ header {
   word-break: break-all;
 }
 
+.typing-indicator {
+  margin-bottom: 0;
+}
+
+.typing-indicator-hidden {
+  opacity: 0;
+}
+
 /* 投稿リスト */
 .post-list {
   display: grid; /* Flexboxの代わりにGridを使用 */

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { LuCopy, LuCheck, LuPencil } from "react-icons/lu";
 import { supabase } from "../supabaseClient";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import { digestMessage } from "../utils/crypto";
 import "../App.css";
 
@@ -25,7 +26,7 @@ type Room = {
 type FormInputs = { name: string; comment: string };
 type PasswordFormInputs = { password: string };
 type RoomNameFormInputs = { roomName: string };
-
+type PresenceState = { is_typing: boolean };
 // ランダムに色を設定
 const createShuffleGenerator = () => {
   const masterColors = [
@@ -69,6 +70,18 @@ function RoomPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+
+  // 書き込み中の人数をカウントするstate
+  const [typingUsersCount, setTypingUsersCount] = useState(0);
+
+  // 自分のタイピング状態をローカルで管理するstate
+  const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
+
+  // チャンネルのインスタンスを保持するためのref
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // タイピング停止を検知するタイマーのIDを保持するためのref
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isOpen = room?.is_open || false;
   const {
@@ -130,9 +143,21 @@ function RoomPage() {
   useEffect(() => {
     if (!room?.id || !hashedRoomId) return;
 
+    // 入力ユーザーの監視準備
+    const myPresenceKey = Math.random().toString(36).substring(7);
+    const channel = supabase.channel(`room-channel:${hashedRoomId}`, {
+      config: {
+        presence: {
+          key: myPresenceKey,
+        },
+      },
+    });
+
+    // 作成したチャンネルをrefに保存
+    channelRef.current = channel;
+
     // リアルタイムリスナー
-    const postsChannel = supabase
-      .channel(`posts_realtime_${hashedRoomId}`)
+    channel
       .on(
         "postgres_changes",
         {
@@ -174,13 +199,67 @@ function RoomPage() {
           setRoom(newRoomData);
         }
       )
-      .subscribe();
+      .on("presence", { event: "sync" }, () => {
+        const presenceState = channel.presenceState<PresenceState>();
+        const myKey = myPresenceKey;
+
+        let typingCount = 0;
+
+        for (const key in presenceState) {
+          // 自分自身はカウントしない
+          if (key === myKey) continue;
+
+          // presenceState[key]は配列（同じキーで複数タブを開けるため）
+          // 最初の要素の状態をチェック
+          if (presenceState[key][0]?.is_typing) {
+            typingCount++;
+          }
+        }
+        // カウントをstateにセット
+        setTypingUsersCount(typingCount);
+      })
+      .subscribe(async (status) => {
+        if (status !== "SUBSCRIBED") return;
+
+        await channel.track({
+          is_typing: false,
+        });
+      });
 
     // このコンポーネントが画面から消える時に、監視を終了する
     return () => {
-      supabase.removeChannel(postsChannel);
+      if (channelRef.current) {
+        channelRef.current.untrack();
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [room?.id, hashedRoomId]);
+
+  const handleTyping = () => {
+    if (!channelRef.current) return;
+
+    // すでに入力中（isCurrentlyTypingがtrue）でなければ、
+    // 状態を「タイピング中」に更新
+    if (!isCurrentlyTyping) {
+      channelRef.current.track({ is_typing: true });
+      setIsCurrentlyTyping(true); // ローカルのstateも更新
+    }
+
+    // もし既存の「停止タイマー」があれば解除
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // 3秒後に「タイピング停止」を送信するタイマーをセット
+    typingTimeoutRef.current = setTimeout(() => {
+      if (channelRef.current) {
+        channelRef.current.track({ is_typing: false });
+      }
+      setIsCurrentlyTyping(false); // ローカルのstateも更新
+      typingTimeoutRef.current = null;
+    }, 3000); // 3秒間入力がなければ停止とみなす
+  };
 
   const onPostSubmit: SubmitHandler<FormInputs> = async (data) => {
     if (!room) return;
@@ -370,10 +449,10 @@ function RoomPage() {
                   type="text"
                   {...registerRoomName("roomName", {
                     required: "部屋の名前は必須です",
-                  maxLength: {
-                    value: 255,
-                    message: "部屋名は255文字以内で入力してください",
-                  },
+                    maxLength: {
+                      value: 255,
+                      message: "部屋名は255文字以内で入力してください",
+                    },
                   })}
                   autoFocus
                 />
@@ -521,6 +600,7 @@ function RoomPage() {
                   message: "コメントは255文字以内で入力してください",
                 },
               })}
+              onInput={handleTyping}
             />
             {errors.name && (
               <p className="error-message">{errors.name.message}</p>
@@ -538,6 +618,16 @@ function RoomPage() {
             {isSubmitting ? "書き込み中..." : "書き込む"}
           </button>
         </form>
+
+        <p
+          className={
+            typingUsersCount > 0
+              ? "typing-indicator"
+              : "typing-indicator typing-indicator-hidden"
+          }
+        >
+          {typingUsersCount}人が書き込み中...
+        </p>
       </section>
     </div>
   );
