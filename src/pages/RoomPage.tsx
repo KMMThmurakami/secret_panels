@@ -130,9 +130,9 @@ function RoomPage() {
   useEffect(() => {
     if (!room?.id || !hashedRoomId) return;
 
-    // 投稿のリアルタイムリスナー
+    // リアルタイムリスナー
     const postsChannel = supabase
-      .channel(`posts_realtime_${hashedRoomId}`) // チャンネル名は他と重複しなければ何でもOK
+      .channel(`posts_realtime_${hashedRoomId}`)
       .on(
         "postgres_changes",
         {
@@ -155,11 +155,6 @@ function RoomPage() {
           setPosts([]);
         }
       )
-      .subscribe();
-
-    // 合言葉変更のリアルタイムリスナー
-    const roomChannel = supabase
-      .channel(`room_realtime_${hashedRoomId}`)
       .on(
         "postgres_changes",
         {
@@ -184,7 +179,6 @@ function RoomPage() {
     // このコンポーネントが画面から消える時に、監視を終了する
     return () => {
       supabase.removeChannel(postsChannel);
-      supabase.removeChannel(roomChannel);
     };
   }, [room?.id, hashedRoomId]);
 
