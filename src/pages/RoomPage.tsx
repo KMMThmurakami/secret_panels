@@ -243,6 +243,47 @@ function RoomPage() {
     };
   }, [room?.id, hashedRoomId]);
 
+  const [isRotating, setIsRotating] = useState(false);
+  const [isCommentVisible, setIsCommentVisible] = useState(false);
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    // 初回レンダリング時はアニメーションを実行しない
+    if (isInitialMount.current) {
+      console.log("初回レンダリング");
+      isInitialMount.current = false;
+      // もし初期状態でisOpenがtrueの場合は、アニメーションなしでコメントを表示
+      if (isOpen) {
+        setIsCommentVisible(true);
+        console.log("もし初期状態でisOpenがtrueの場合は、アニメーションなしでコメントを表示");
+      }
+      return;
+    }
+    console.log("回転");
+
+    let timerRotate: string | number | NodeJS.Timeout | undefined;
+    let timerCommentVisible: string | number | NodeJS.Timeout | undefined;
+    // isOpenがtrueになった時（コメントを表示する時）
+    if (isOpen) {
+      setIsRotating(true);
+      timerRotate = setTimeout(() => {
+        setIsRotating(false);
+      }, 1000);
+      timerCommentVisible = setTimeout(() => {
+        setIsCommentVisible(true);
+      }, 650);
+    } else {
+      // isOpenがfalseになった時（コメントを隠す時）は即座に非表示
+      setIsCommentVisible(false);
+    }
+
+    // コンポーネントがアンマウントされるか、
+    // isOpenが再度変更された場合にタイマーをクリアするクリーンアップ関数
+    return () => {
+      clearTimeout(timerRotate);
+      clearTimeout(timerCommentVisible);
+    };
+  }, [isOpen]);
+
   const handleTyping = () => {
     if (!channelRef.current) return;
 
@@ -582,7 +623,7 @@ function RoomPage() {
             key={post.id}
             className={`${
               isClassic === true ? "post-item-classic" : "post-item"
-            }`}
+            } ${isClassic === false && isRotating ? "rotate" : ""}`}
             style={{
               backgroundColor: isClassic === false ? post.color : "transparent",
             }}
@@ -597,12 +638,14 @@ function RoomPage() {
             </div>
             <div
               className={
-                isOpen ? "post-comment" : "post-comment post-comment-hidden"
+                isCommentVisible
+                  ? "post-comment"
+                  : "post-comment post-comment-hidden"
               }
             >
               {post.comment.split("\n").map((line, i) => (
                 <span key={i}>
-                  {isOpen ? line : "？？？？"}
+                  {isCommentVisible ? line : "？？？？？"}
                   <br />
                 </span>
               ))}
