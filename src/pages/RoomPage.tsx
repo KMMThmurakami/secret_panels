@@ -274,7 +274,10 @@ function RoomPage() {
       comment: data.comment,
       color: randomColor,
     });
-    reset();
+    reset({
+      name: data.name, // name は保持
+      comment: "",
+    });
     setIsSubmitting(false);
     if (channelRef.current) {
       channelRef.current.track({ is_typing: false });
