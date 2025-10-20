@@ -245,21 +245,7 @@ function RoomPage() {
 
   const [isRotating, setIsRotating] = useState(false);
   const [isCommentVisible, setIsCommentVisible] = useState(false);
-  const isInitialMount = useRef(true);
   useEffect(() => {
-    // 初回レンダリング時はアニメーションを実行しない
-    if (isInitialMount.current) {
-      console.log("初回レンダリング");
-      isInitialMount.current = false;
-      // もし初期状態でisOpenがtrueの場合は、アニメーションなしでコメントを表示
-      if (isOpen) {
-        setIsCommentVisible(true);
-        console.log("もし初期状態でisOpenがtrueの場合は、アニメーションなしでコメントを表示");
-      }
-      return;
-    }
-    console.log("回転");
-
     let timerRotate: string | number | NodeJS.Timeout | undefined;
     let timerCommentVisible: string | number | NodeJS.Timeout | undefined;
     // isOpenがtrueになった時（コメントを表示する時）
@@ -416,6 +402,16 @@ function RoomPage() {
       alert("エラーが発生しました。");
       console.error(error);
     } else {
+      const { error: roomError } = await supabase
+        .from(roomsTableName)
+        .update({ is_open: false }) // コメントを閉じた状態に
+        .eq("id", room.id);
+
+      if (roomError) {
+        alert("部屋の状態更新に失敗しました。");
+        console.error(roomError);
+      }
+
       if (channelRef.current) {
         channelRef.current.send({
           type: "broadcast",
