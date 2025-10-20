@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: left;
+  padding-bottom: 280px;
 }
 
 @media (max-width: 768px) {
@@ -65,37 +66,17 @@ header {
   display: grid; /* Flexboxの代わりにGridを使用 */
   grid-template-columns: repeat(3, 1fr); /* 3つのカラムを均等な幅で作成 */
   gap: 16px; /* パネル間の余白 */
-  margin-bottom: 2rem;
 }
 
 .post-list-classic {
   display: flex;
   flex-direction: column;
-  margin-bottom: 2rem;
 }
 
 @keyframes rotateY {
   0% {
     transform: rotateY(0deg);
   }
-  /* 10% {
-    transform: rotateY(360deg);
-  }
-  20% {
-    transform: rotateY(0deg);
-  }
-  30% {
-    transform: rotateY(360deg);
-  }
-  40% {
-    transform: rotateY(0deg);
-  }
-  50% {
-    transform: rotateY(360deg);
-  }
-  60% {
-    transform: rotateY(0deg);
-  } */
   50% {
     transform: rotateY(180deg);
   }
@@ -172,6 +153,12 @@ header {
   padding: 1rem;
   background-color: #f9f9f9;
   border-radius: 5px;
+  width: 85%;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  margin: auto;
 }
 
 .form-group {

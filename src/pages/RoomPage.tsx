@@ -668,8 +668,6 @@ function RoomPage() {
           ))}
       </section>
 
-      <hr />
-
       {/* 投稿フォームエリア */}
       <section className="form-section">
         <form onSubmit={handleSubmit(onPostSubmit)}>
