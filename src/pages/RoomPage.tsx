@@ -375,11 +375,14 @@ function RoomPage() {
       alert("エラーが発生しました。");
       console.error(error);
     } else {
-      const channel = supabase.channel(`posts_realtime_${hashedRoomId}`);
-      channel.send({
-        type: "broadcast",
-        event: "reset",
-      });
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "reset",
+        });
+      } else {
+        console.error("チャンネルが見つかりません。");
+      }
       setPosts([]); // 画面上の投稿リストも空にする
     }
   };
