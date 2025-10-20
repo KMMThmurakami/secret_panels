@@ -79,7 +79,7 @@ function RoomPage() {
   const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isClassic, setIsClassic] = useState(false);
-  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(true);
 
   // 書き込み中の人数をカウントするstate
   const [typingUsersCount, setTypingUsersCount] = useState(0);
