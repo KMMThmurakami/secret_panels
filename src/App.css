@@ -3,7 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: left;
-  padding-bottom: 280px;
+  /* padding-bottom: 280px; */
 }
 
 @media (max-width: 768px) {
@@ -27,11 +27,17 @@ body {
 
 .board-container {
   margin: 2rem auto;
+  margin-bottom: 0;
   padding: 1.5rem;
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: margin-bottom 0.3s ease-out;
+}
+
+.board-container-margin {
+  margin-bottom: 320px;
 }
 
 header {
@@ -150,15 +156,75 @@ header {
 
 /* フォーム */
 .form-section {
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 5px;
-  width: 85%;
+  padding: 0; /* ★ 内部のpaddingはform本体に移動 */
+  background-color: #fff;
+  border-radius: 8px 8px 0 0;
+  width: 90%;
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 12px;
+  bottom: 0;
   margin: auto;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+
+  /* ★ アニメーションの初期状態（最小化） */
+  /* 完全に隠さず、ヘッダーの高さ(50px)だけ残す */
+  transform: translateY(calc(100% - 50px)); 
+  transition: transform 0.3s ease;
+  
+  /* ★ 以前の opacity, visibility は削除 */
+}
+
+/* ★ フォームの表示状態（最大化） */
+.form-section.is-visible {
+  transform: translateY(0); /* スライドイン */
+}
+
+/* ★ 新しいフォームヘッダーのスタイル */
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem; /* 左右のpadding */
+  height: 50px; /* 最小化時の高さと合わせる */
+  cursor: pointer; /* ヘッダー全体をクリック可能に */
+  border-bottom: 1px solid transparent; /* 境界線（開いた時用） */
+}
+/* フォームが開いている時だけ境界線を見せる */
+.form-section.is-visible .form-header {
+  border-bottom-color: #eee;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  user-select: none; /* テキスト選択不可に */
+}
+
+/* ★ ヘッダー内の切り替えボタンのスタイル */
+.form-toggle-button {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  width: 40px;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* ★ 以前のFABスタイル(width, height, position:fixedなど)は不要 */
+}
+.form-toggle-button:hover {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+/* ★ フォーム本体のスタイル */
+.form-section form {
+  padding: 1rem;
 }
 
 .form-group {

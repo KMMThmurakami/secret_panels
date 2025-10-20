@@ -7,6 +7,8 @@ import {
   LuPencil,
   LuLayoutGrid,
   LuList,
+  LuChevronUp,
+  LuChevronDown,
 } from "react-icons/lu";
 import { supabase } from "../supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -77,6 +79,7 @@ function RoomPage() {
   const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isClassic, setIsClassic] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
   // 書き込み中の人数をカウントするstate
   const [typingUsersCount, setTypingUsersCount] = useState(0);
@@ -472,7 +475,7 @@ function RoomPage() {
     );
 
   return (
-    <div className="board-container">
+    <div className={`board-container ${isFormVisible ? "board-container-margin" : ""}`}>
       <header>
         <nav>
           <Link to="/" className="back-link secondary-button">
@@ -669,7 +672,16 @@ function RoomPage() {
       </section>
 
       {/* 投稿フォームエリア */}
-      <section className="form-section">
+      <section className={`form-section ${isFormVisible ? "is-visible" : ""}`}>
+        <div className="form-header" onClick={() => setIsFormVisible(!isFormVisible)}>
+            <h3>{isFormVisible ? "コメントを投稿" : "投稿フォームを開く"}</h3>
+            <button
+              className="form-toggle-button"
+              title={isFormVisible ? "フォームを閉じる" : "投稿フォームを開く"}
+            >
+              {isFormVisible ? <LuChevronDown size={24} /> : <LuChevronUp size={24} />}
+            </button>
+          </div>
         <form onSubmit={handleSubmit(onPostSubmit)}>
           <div className="form-group">
             <label htmlFor="name">名前:</label>
