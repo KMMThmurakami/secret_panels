@@ -50,6 +50,12 @@ header {
   margin-bottom: 2rem;
 }
 
+.post-list-classic {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2rem;
+}
+
 .post-item {
   width: 100%;
   height: 200px;
@@ -70,6 +76,17 @@ header {
   .post-list {
     grid-template-columns: 1fr;
   }
+}
+
+.post-item-classic {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dotted #ccc;
+  padding-bottom: 1rem;
+}
+
+.post-item-classic:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .post-header {
@@ -323,4 +340,32 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.view-toggle-section {
+  display: flex;
+  justify-content: flex-end; /* 右寄せ */
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.view-toggle-button {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  color: #888;
+}
+.view-toggle-button:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+/* 選択中のボタンのスタイル */
+.view-toggle-button.active {
+  background-color: #e0e0e0;
+  color: #000;
+  border-color: #bbb;
+}
+.view-toggle-button svg {
+  vertical-align: middle;
 }

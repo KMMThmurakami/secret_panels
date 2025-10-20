@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { LuCopy, LuCheck, LuPencil } from "react-icons/lu";
+import {
+  LuCopy,
+  LuCheck,
+  LuPencil,
+  LuLayoutGrid,
+  LuList,
+} from "react-icons/lu";
 import { supabase } from "../supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { digestMessage } from "../utils/crypto";
@@ -70,6 +76,7 @@ function RoomPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isClassic, setIsClassic] = useState(false);
 
   // 書き込み中の人数をカウントするstate
   const [typingUsersCount, setTypingUsersCount] = useState(0);
@@ -543,13 +550,36 @@ function RoomPage() {
           )}
         </section>
       </div>
-
-      <section className="post-list">
+      <div className="view-toggle-section">
+        <button
+          onClick={() => setIsClassic(false)}
+          className={`view-toggle-button ${
+            isClassic === false ? "active" : ""
+          }`}
+          title="パネル表示"
+        >
+          <LuLayoutGrid />
+        </button>
+        <button
+          onClick={() => setIsClassic(true)}
+          className={`view-toggle-button ${isClassic === true ? "active" : ""}`}
+          title="リスト表示"
+        >
+          <LuList />
+        </button>
+      </div>
+      <section
+        className={`${isClassic === true ? "post-list-classic" : "post-list"}`}
+      >
         {posts.map((post, index) => (
           <div
             key={post.id}
-            className="post-item"
-            style={{ backgroundColor: post.color }}
+            className={`${
+              isClassic === true ? "post-item-classic" : "post-item"
+            }`}
+            style={{
+              backgroundColor: isClassic === false ? post.color : "transparent",
+            }}
           >
             <div className="post-header">
               <span>{index + 1}: </span>
@@ -578,8 +608,13 @@ function RoomPage() {
           .map((_, index) => (
             <div
               key={index}
-              className="post-item"
-              style={{ backgroundColor: "#ccc", opacity: 0.5 }}
+              className={`${
+                isClassic === true ? "post-item-classic" : "post-item"
+              }`}
+              style={{
+                backgroundColor: isClassic === false ? "#ccc" : "transparent",
+                opacity: 0.5,
+              }}
             >
               <div className="post-comment">
                 <span>書き込み中...</span>
