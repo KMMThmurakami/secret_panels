@@ -546,7 +546,10 @@ function RoomPage() {
               >
                 {isOpen ? "コメントを隠す" : "コメントを表示する"}
               </button>
-              <button onClick={handleResetPost} className="danger-button">
+              <button
+                onClick={handleResetPost}
+                className="toggle-button danger-button"
+              >
                 コメントをリセット
               </button>
             </>

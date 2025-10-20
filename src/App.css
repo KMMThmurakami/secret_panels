@@ -5,6 +5,12 @@
   text-align: left;
 }
 
+@media (max-width: 768px) {
+  #root {
+    width: 85%;
+  }
+}
+
 body {
   font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
   background-color: #f0f0f0;
@@ -32,10 +38,22 @@ header {
   justify-content: space-between;
 }
 
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+  }
+}
+
 .board-head {
   display: flex;
   justify-content: space-between;
   margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .board-head {
+    flex-direction: column;
+  }
 }
 
 .room-name {
@@ -170,6 +188,12 @@ button:hover {
   align-items: center;
   flex-direction: column;
   gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .controls-section {
+    flex-direction: row;
+  }
 }
 
 .toggle-button {
@@ -344,7 +368,6 @@ button:hover {
 
 .view-toggle-section {
   display: flex;
-  justify-content: flex-end; /* 右寄せ */
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -355,6 +378,7 @@ button:hover {
   padding: 0.3rem 0.5rem;
   cursor: pointer;
   color: #888;
+  width: 40px;
 }
 .view-toggle-button:hover {
   background-color: #f0f0f0;
