@@ -34,6 +34,7 @@ function HomePage() {
         .from(roomsTableName)
         .insert({
           hashed_id: hashedId,
+          hashed_id_bk: hashedId,
           name: roomNameToSend,
         })
         .select()

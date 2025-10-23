@@ -307,6 +307,7 @@ function RoomPage() {
 
     await supabase.from(postsTableName).insert({
       room_id: room.id,
+      room_id_bk: room.id,
       name: data.name || null,
       comment: data.comment,
       color: randomColor,
